@@ -13,12 +13,15 @@ from typing import List
 import re
 
 from model.symbol_day_analysis import SymbolDayAnalysis
+from users import router as user_router
 
 load_dotenv()
 
 API_KEY=os.getenv("API_KEY")
 
 app=FastAPI()
+
+app.include_router(user_router)
 
 @app.get("/")
 def read_data():
@@ -30,7 +33,7 @@ def read_api(symbol:str):
         response = requests.get(
             f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={symbol}&apikey={API_KEY}")
         symbol_daily_analysis = json.loads(response.text)
-        symbol_daily_analysis_items = []
+        symbol_daily_analysis_items = {}
         for key, value in symbol_daily_analysis["Time Series (Daily)"].items():
             print(key, value)
             symbol_daily_analysis_item = {}
