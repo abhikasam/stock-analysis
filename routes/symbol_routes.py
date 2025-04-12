@@ -1,10 +1,12 @@
 from http import HTTPStatus
 from typing import List
 
+import requests
 from fastapi import APIRouter, Depends
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from core.config import Configuration
 from models.database import SessionLocal
 from models.symbol import Symbol
 from schemas.symbol import SymbolResponse, SymbolCreate
@@ -27,6 +29,12 @@ def read_symbols(db:Session=Depends(get_db)):
     symbols = db.query(Symbol).all()
     return symbols
 
+@router.get("/{symbol}/overview")
+def read_overview(symbol:str):
+    response = requests.get(f"https://www.alphavantage.co/query?function=OVERVIEW&symbol={symbol}"
+                            f"&apikey={Configuration.ALPHAVANTAGE_APIKEY}")
+    return response.json()
+
 @router.post("/",response_model=SymbolResponse)
 def create_symbol(symbol:SymbolCreate,db:Session = Depends(get_db)):
     db_symbol = Symbol(**symbol.model_dump())
@@ -35,22 +43,9 @@ def create_symbol(symbol:SymbolCreate,db:Session = Depends(get_db)):
     db.refresh(db_symbol)
     return db_symbol
 
-
-@router.post("/bulk", response_model=List[SymbolResponse])
-def bulk_insert(symbols: List[SymbolCreate], db: Session = Depends(get_db)):
-    all_db_symbols = db.query(Symbol).all()
-    db_symbols:List[Symbol] = []
-    for symbol in symbols:
-        if not all_db_symbols.__contains__(symbol.name) :
-            db_symbol = Symbol(**symbol.model_dump())
-            db.add(db_symbol)
-            db.commit()
-            db.refresh(db_symbol)
-            db_symbols.append(db_symbol)
-    return db_symbols
-
-@router.delete("/bulk")
-def bulk_delete(db:Session = Depends(get_db)):
-    db.execute(text(f"delete from symbol"))
-    db.commit()
-    return []
+@router.get("/{symbol}/time_series_daily")
+def read_time_series_daily(symbol:str):
+    response = requests.get(
+            f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&"
+            f"symbol={symbol}&apikey={Configuration.ALPHAVANTAGE_APIKEY}")
+    return response.json()
