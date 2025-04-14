@@ -24,14 +24,14 @@ def read_users(db:Session = db_dependency):
 
 @router.get("/{user_id}", response_model=UserResponse)
 def read_user(user_id: int, db: Session = db_dependency):
-    user = db.query(User).filter(User.id == user_id).first()
+    user = db.query(User).filter_by(id = user_id).first()
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
 @router.post("/", response_model=UserResponse)
 def create_user(user: UserCreate, db: Session = db_dependency):
-    existing = db.query(User).filter(User.email==user.email).first()
+    existing = db.query(User).filter_by(email=user.email).first()
     if existing:
         raise HTTPException(status_code=400,detail="Email already registered")
     db_user = User(**user.model_dump())
@@ -43,12 +43,16 @@ def create_user(user: UserCreate, db: Session = db_dependency):
 
 @router.get("/{user_id}/watchlists")
 def read_watchlists(user_id:int,db:Session=db_dependency):
-    user = db.query(User).filter(User.id==user_id).first()
+    user = db.query(User).filter_by(id=user_id).first()
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
     return user.watch_lists
 
 @router.get("/{user_id}/portfolios")
 def read_portfolios(user_id:int,db:Session=db_dependency):
-    user = db.query(User).filter_by(id==user_id).first()
+    user = db.query(User).filter_by(id=user_id).first()
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
     return user.portfolios
 
 @router.post("/bulk")

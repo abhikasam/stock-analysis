@@ -25,8 +25,8 @@ def read_symbols(db:Session=Depends(get_db)):
 
 @router.get("/{stock}/overview")
 def read_overview(stock:str):
-    response = requests.get(f"https://www.alphavantage.co/query?function=OVERVIEW&symbol={stock}"
-                            f"&apikey={Configuration.ALPHAVANTAGE_APIKEY}")
+    print(Configuration.ALPHAVANTAGE_STOCK_OVERVIEW_URL.format(symbol=stock))
+    response = requests.get(Configuration.ALPHAVANTAGE_STOCK_OVERVIEW_URL.format(symbol=stock))
     return response.json()
 
 @router.post("/", response_model=StockResponse)
@@ -39,9 +39,7 @@ def create_symbol(stock:StockCreate, db:Session = Depends(get_db)):
 
 @router.get("/{stock}/time_series_daily")
 def read_time_series_daily(stock:str):
-    response = requests.get(
-            f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&"
-            f"symbol={stock}&apikey={Configuration.ALPHAVANTAGE_APIKEY}")
+    response = requests.get(Configuration.ALPHAVANTAGE_TIME_SERIES_DAILY_URL.format(symbol=stock))
     return response.json()
 
 
