@@ -14,6 +14,16 @@ router = APIRouter(
 
 db_dependency = Depends(get_db)
 
+@router.get("/{portfolio_id}")
+def read_portfolio(portfolio_id:int,db:Session = db_dependency):
+    portfolio = db.query(Portfolio).filter_by(id=portfolio_id).first()
+    if not portfolio:
+        raise HTTPException(status_code=400,detail="Portfolio not exists")
+    if len(portfolio.stocks)==0:
+        raise HTTPException(status_code=200,detail="No stock present in portfolio")
+    return portfolio.stocks
+
+
 @router.post("/",response_model=PortfolioResponse)
 def insert_portfolio(portfolio_create:PortfolioCreate,db:Session = db_dependency):
     stock_exists = db.query(Stock).filter_by(id=portfolio_create.stock_id).first()
