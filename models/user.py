@@ -1,10 +1,12 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, Boolean
+from sqlalchemy.orm import relationship
+from models.database import Entity
 
-from models.database import DataBase
-
-
-class User(DataBase):
+class User(Entity):
     __tablename__= "user"
     id=Column(Integer,primary_key=True,index=True)
     name = Column(String,index=False)
     email=Column(String,unique=True,index=False)
+
+    watch_lists = relationship("WatchList",back_populates="user")
+    portfolios = relationship("Portfolio",back_populates="user")
