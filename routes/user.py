@@ -58,17 +58,7 @@ def read_portfolios(user_id:int,db:Session=db_dependency):
 @router.post("/bulk")
 def insert_user(users_create:List[UserCreate],db:Session= db_dependency):
     db_users = []
-    if len(users_create) == 0:
-        with open('db/users.json') as file:
-            users = json.load(file)
-            print(users)
-            for user in users:
-                db_user = User(**user)
-                db.add(db_user)
-                db.commit()
-                db.refresh(db_user)
-                db_users.append(db_user)
-    else:
+    if len(users_create) != 0:
         all_users = db.query(User).with_entities(User.email).all()
         for user in users_create:
             if user.email not in all_users:
@@ -77,4 +67,17 @@ def insert_user(users_create:List[UserCreate],db:Session= db_dependency):
                 db.commit()
                 db.refresh(db_user)
                 db_users.append(db_user)
+    return db_users
+
+@router.post("/import")
+def import_data(db:Session = db_dependency):
+    db_users = []
+    with open('db/users.json') as file:
+        users = json.load(file)
+        for user in users:
+            db_user = User(**user)
+            db.add(db_user)
+            db.commit()
+            db.refresh(db_user)
+            db_users.append(db_user)
     return db_users

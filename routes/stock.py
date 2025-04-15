@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from core.config import Configuration
 from models.database import SessionLocal, get_db
 from models.stock import Stock
+from routes.user import db_dependency
 from schemas.stock import StockResponse, StockCreate
 
 router = APIRouter(
@@ -46,17 +47,7 @@ def read_time_series_daily(stock:str):
 @router.post("/bulk",response_model=List[StockResponse])
 def insert_bulk(stocks_create:List[StockCreate],db:Session = Depends(get_db)):
     db_stocks = []
-    if len(stocks_create) == 0:
-        with open('db/stocks.json') as file:
-            stocks = json.load(file)
-            for stock in stocks:
-                db_stock = Stock(**stock)
-                db.add(db_stock)
-                db.commit()
-                db.refresh(db_stock)
-                db_stocks.append(db_stock)
-        pass
-    else :
+    if len(stocks_create) != 0:
         all_symbols = db.query(Stock).with_entities(Stock.symbol).all()
         for stock in stocks_create:
             if stock.symbol not in all_symbols:
@@ -65,4 +56,17 @@ def insert_bulk(stocks_create:List[StockCreate],db:Session = Depends(get_db)):
                 db.commit()
                 db.refresh(db_stock)
                 db_stocks.append(db_stock)
+    return db_stocks
+
+@router.post("/import",response_model=List[StockResponse])
+def import_stocks(db:Session = db_dependency):
+    db_stocks = []
+    with open('db/stocks.json') as file:
+        stocks = json.load(file)
+        for stock in stocks:
+            db_stock = Stock(**stock)
+            db.add(db_stock)
+            db.commit()
+            db.refresh(db_stock)
+            db_stocks.append(db_stock)
     return db_stocks
