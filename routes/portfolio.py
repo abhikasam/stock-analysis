@@ -1,4 +1,5 @@
 import json
+from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -17,7 +18,21 @@ router = APIRouter(
 
 db_dependency = Depends(get_db)
 
-@router.get("/{portfolio_id}")
+@router.get("/",response_model=List[PortfolioResponse])
+def read_all_portfolios(db:Session = db_dependency):
+    db_portfolios = db.query(Portfolio).all()
+    portfolios=[]
+    for db_portfolio in db_portfolios:
+        portfolio = PortfolioResponse(
+            name=db_portfolio.name,
+            id=db_portfolio.id,
+            user_id=db_portfolio.user_id
+        )
+        portfolios.append(portfolio)
+    return portfolios
+
+
+@router.get("/{portfolio_id}/stocks")
 def read_portfolio(portfolio_id:int,db:Session = db_dependency):
     portfolio = db.query(Portfolio).filter_by(id=portfolio_id).first()
     if not portfolio:
