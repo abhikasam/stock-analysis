@@ -4,11 +4,12 @@ from typing import List
 
 from fastapi import Depends, HTTPException, APIRouter
 from sqlalchemy.orm import Session
-from models.database import SessionLocal, engine, Entity, get_db
-from models.watch_list import WatchList
-from routes.portfolio import db_dependency
+from starlette import status
+
+from models.database import get_db
 from schemas.user import UserCreate,UserResponse
 from models.user import User
+from passlib.context import CryptContext
 
 router = APIRouter(
     prefix="/users",
@@ -16,8 +17,10 @@ router = APIRouter(
 )
 
 db_dependency = Depends(get_db)
+bcrypt_context = CryptContext(schemes=['bcrypt'])
 
-@router.get("/", response_model=List[UserResponse])
+
+@router.get("/",response_model=List[UserResponse])
 def read_users(db:Session = db_dependency):
     users = db.query(User).all()
     return users
@@ -29,16 +32,19 @@ def read_user(user_id: int, db: Session = db_dependency):
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
-@router.post("/", response_model=UserResponse)
+@router.post("/", status_code=status.HTTP_201_CREATED, response_model=UserResponse)
 def create_user(user: UserCreate, db: Session = db_dependency):
     existing = db.query(User).filter_by(email=user.email).first()
     if existing:
         raise HTTPException(status_code=400,detail="Email already registered")
-    db_user = User(**user.model_dump())
+    db_user = User(
+        email = user.email,
+        name = user.name,
+        hashed_password = bcrypt_context.hash(user.password),
+        is_active = True
+    )
     db.add(db_user)
     db.commit()
-    db.refresh(db_user)
-    return db_user
 
 
 @router.get("/{user_id}/watchlists")

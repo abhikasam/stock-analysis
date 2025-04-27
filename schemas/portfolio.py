@@ -10,3 +10,5 @@ class PortfolioResponse(PortfolioCreate):
 
     class Config:
         from_attributes=True
+
+
