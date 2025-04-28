@@ -14,18 +14,18 @@ import re
 
 from core.config import Configuration
 from models.database import Entity, engine
-from routes import user, stock, watch_list, portfolio
+from routes import user, stock, watch_list, portfolio, auth
 
 # Create tables
 Entity.metadata.create_all(bind=engine)
 
 app=FastAPI()
 
+app.include_router(auth.router)
 app.include_router(user.router)
 app.include_router(stock.router)
 app.include_router(watch_list.router)
 app.include_router(portfolio.router)
-
 
 
 

@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from starlette import status
 
 from models.database import get_db
-from schemas.user import UserCreate,UserResponse
+from schemas.user import UserCreate, UserResponse, UserQuery
 from models.user import User
 from passlib.context import CryptContext
 
@@ -20,9 +20,17 @@ db_dependency = Depends(get_db)
 bcrypt_context = CryptContext(schemes=['bcrypt'])
 
 
-@router.get("/",response_model=List[UserResponse])
+@router.get("/",response_model=List[UserQuery])
 def read_users(db:Session = db_dependency):
     users = db.query(User).all()
+    user_results:List[UserQuery] = [
+        UserQuery(
+            email= user.email,
+            name= user.name,
+            is_active= user.is_active
+        )
+        for user in users
+    ]
     return users
 
 @router.get("/{user_id}", response_model=UserResponse)
@@ -68,7 +76,12 @@ def insert_user(users_create:List[UserCreate],db:Session= db_dependency):
         all_users = db.query(User).with_entities(User.email).all()
         for user in users_create:
             if user.email not in all_users:
-                db_user = User(**user.model_dump())
+                db_user = User(
+                    email=user.email,
+                    hashed_password=bcrypt_context.hash(user.password),
+                    name=user.name,
+                    is_active=True
+                )
                 db.add(db_user)
                 db.commit()
                 db.refresh(db_user)
@@ -80,8 +93,14 @@ def import_data(db:Session = db_dependency):
     db_users = []
     with open('db/users.json') as file:
         users = json.load(file)
-        for user in users:
-            db_user = User(**user)
+        user_jsons:List[UserCreate] = [ UserCreate(**u) for u in users]
+        for user in user_jsons:
+            db_user = User(
+                email = user.email,
+                hashed_password = bcrypt_context.hash(user.password),
+                name = user.name,
+                is_active = True
+            )
             db.add(db_user)
             db.commit()
             db.refresh(db_user)
