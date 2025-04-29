@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from starlette import status
 
 from models.database import get_db
+from routes.auth import get_current_user
 from schemas.user import UserCreate, UserResponse, UserQuery
 from models.user import User
 from passlib.context import CryptContext
@@ -21,7 +22,7 @@ bcrypt_context = CryptContext(schemes=['bcrypt'])
 
 
 @router.get("/",response_model=List[UserQuery])
-def read_users(db:Session = db_dependency):
+def read_users(db:Session = db_dependency,current_user=Depends(get_current_user)):
     users = db.query(User).all()
     user_results:List[UserQuery] = [
         UserQuery(
@@ -31,7 +32,7 @@ def read_users(db:Session = db_dependency):
         )
         for user in users
     ]
-    return users
+    return user_results
 
 @router.get("/{user_id}", response_model=UserResponse)
 def read_user(user_id: int, db: Session = db_dependency):
