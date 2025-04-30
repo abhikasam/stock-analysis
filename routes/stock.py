@@ -11,7 +11,8 @@ from sqlalchemy.orm import Session
 from core.config import Configuration
 from models.database import SessionLocal, get_db
 from models.stock import Stock
-from routes.user import db_dependency
+from models.user import User
+from routes.auth import get_current_user
 from schemas.stock import StockResponse, StockCreate
 
 router = APIRouter(
@@ -19,10 +20,20 @@ router = APIRouter(
     tags=["Stock"]
 )
 
-@router.get("/", response_model=List[StockResponse])
-def read_symbols(db:Session=Depends(get_db)):
-    symbols = db.query(Stock).all()
-    return symbols
+db_dependency : Session = Depends(get_db)
+user_dependency = Depends(get_current_user)
+
+@router.get("/all", response_model=List[StockResponse])
+def read_stocks(db=db_dependency):
+    stocks = db.query(Stock).all()
+    return stocks
+
+@router.get("/")
+def read_stocks(db=db_dependency,user = user_dependency):
+    print(user.get('id'))
+    portfolios = db.query(User).filter_by(id=user.get('id')).first().portfolios
+    all_stocks = [ stock for portfolio in portfolios for stock in portfolio.stocks]
+    return all_stocks
 
 @router.get("/{stock}/overview")
 def read_overview(stock:str):
@@ -32,11 +43,11 @@ def read_overview(stock:str):
 
 @router.post("/", response_model=StockResponse)
 def create_symbol(stock:StockCreate, db:Session = Depends(get_db)):
-    db_symbol = Stock(**stock.model_dump())
-    db.add(db_symbol)
+    db_stock = Stock(**stock.model_dump())
+    db.add(db_stock)
     db.commit()
-    db.refresh(db_symbol)
-    return db_symbol
+    db.refresh(db_stock)
+    return db_stock
 
 @router.get("/{stock}/time_series_daily")
 def read_time_series_daily(stock:str):

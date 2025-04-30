@@ -18,14 +18,16 @@ router = APIRouter(
 )
 
 db_dependency = Depends(get_db)
+user_dependency = Depends(get_current_user)
 bcrypt_context = CryptContext(schemes=['bcrypt'])
 
 
 @router.get("/",response_model=List[UserQuery])
-def read_users(db:Session = db_dependency,current_user=Depends(get_current_user)):
+def read_users(db:Session = db_dependency,current_user=user_dependency):
     users = db.query(User).all()
     user_results:List[UserQuery] = [
         UserQuery(
+            id = user.id,
             email= user.email,
             name= user.name,
             is_active= user.is_active

@@ -14,6 +14,7 @@ class UserResponse(UserCreate):
         from_attributes=True
 
 class UserQuery(BaseModel):
+    id:int
     name : str
     email:EmailStr
     is_active:bool
